@@ -1,11 +1,11 @@
 package org.babbelbox.opus;
-
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class OpusInfoParser {
 
@@ -17,9 +17,15 @@ public class OpusInfoParser {
             "copyright", "license", "organization" };
 
     private static String[][] stream_info_fields = {
-            { "Playback gain", "Playback gain: (\\d+ \\w+)" }, { "Pre-skip", "Pre-skip: (\\d+)" },
-            { "Channels", "Channels: (\\d+)" },
-            { "Original sample rate", "Original sample rate: (\\d\\w)" } };
+            { "Playback gain", ".*Playback gain: (\\d+ \\w+).*" },
+            { "Pre-skip", ".*Pre-skip: (\\d+?).*" }, { "Channels", "Channels: (\\d+)" },
+            { "Original sample rate", "Original sample rate: (\\d\\w)" },
+            { "Packet duration", "Packet duration: (.*?)" },
+            { "Page duration", "Page duration: (.*?)" },
+            { "Total data length", "Total data length: (\\d+? \\w+?) .*?" },
+            { "Average bitrate", "Average bitrate: (:*? [/,s]+)" },
+            { "overhead", "overhead: (:*? [/,s]+)" },
+            { "Playback length", "Playback length: (.*?)s" }, };
 
     public static void main(String[] args) throws IOException, InterruptedException {
         // TODO Auto-generated method stub
@@ -31,9 +37,11 @@ public class OpusInfoParser {
 
         BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
         Map<String, String> metaData = new HashMap<>();
+        Map<String, Map<String, String>> streams = new HashMap<String, Map<String, String>>();
 
         String line = "";
         String streamName = null;
+        Map<String, String> streamInfo = null;
         while ((line = reader.readLine()) != null) {
             line = line.trim();
             System.out.println(line);
@@ -53,6 +61,17 @@ public class OpusInfoParser {
              */
             if (line.startsWith("Opus stream")) {
                 streamName = line;
+                streamInfo = new HashMap<String, String>();
+                streams.put(streamName, streamInfo);
+            }
+
+            for (String[] streamInfoField : OpusInfoParser.stream_info_fields) {
+                Pattern pattern = Pattern.compile(".*" + streamInfoField[1] + ".*");
+                Matcher matcher = pattern.matcher(line);
+                if (matcher.find()) {
+                    streamInfo.put(streamInfoField[0], matcher.group(1));
+                    System.out.printf("Found %s Group: %s\n", streamInfoField[0], matcher.group(1));
+                }
             }
 
         }
