@@ -1,5 +1,6 @@
 package org.babbelbox.opus;
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.HashMap;
@@ -9,8 +10,9 @@ import java.util.regex.Pattern;
 
 public class OpusInfoParser {
 
-    public OpusInfoParser() {
-        // TODO Auto-generated constructor stub
+	private String executable;
+    OpusInfoParser(String executable) {
+    	this.executable=executable;
     }
 
     private static String[] user_comment_fields = { "artist", "title", "album", "date",
@@ -27,12 +29,13 @@ public class OpusInfoParser {
             { "overhead", "overhead: (:*? [/,s]+)" },
             { "Playback length", "Playback length: (.*?)s" }, };
 
-    public static void main(String[] args) throws IOException, InterruptedException {
+    public OpusInfo parseOpusFile(File opusFile) throws IOException, InterruptedException {
         // TODO Auto-generated method stub
 
+    	System.out.println("Executing: "+this.executable+" \""+opusFile.getAbsoluteFile().getAbsolutePath()+"\"");
         Process p =
                 Runtime.getRuntime()
-                        .exec("C:\\Users\\fox0h3j\\Downloads\\opus-tools-0.1.9-win32\\opus-tools-0.1.9-win32\\opusinfo.exe d:\\ehren-paper_lights-64.opus.oga");
+                        .exec(this.executable+" "+opusFile.getAbsoluteFile().getAbsolutePath()+"");
         p.waitFor();
 
         BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
@@ -76,7 +79,7 @@ public class OpusInfoParser {
 
         }
         System.out.println("KEKS");
-
+        return new OpusInfo(metaData, streams);
     }
 
 }
